@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" style="background: #202020; overflow-y: scroll;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Step Calculator</title>
+    <style>
+    div#main_container {
+        margin: 0 auto;
+        border: 1px solid rebeccapurple;
+        width: calc(396px + 42px);
+        height: calc(319px + 42px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    /* Dark container styling */
+    .container {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 15px;
+        padding-bottom: 8px;
+        border-radius: 15px;
+        background-color: #353535;
+        color: #999999;
+        font-family: Arial, sans-serif;
+        font-weight: bold;
+        box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Header styling */
+    .header {
+        font-size: 1em;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 15px;
+        color: #999999;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Icon styling for header (circle indicator) */
+    .header::before {
+        content: '';
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background-color: #666666;
+        margin-right: 8px;
+    }
+
+    /* Row styling for each input */
+    .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 8px 0;
+        padding: 8px;
+        border-radius: 20px;
+        background-color: #222222;
+        border: 2px solid #666666;
+        cursor: crosshair;
+    }
+
+    /* Label styling */
+    .label {
+        flex: 1;
+        font-size: 0.9em;
+        color: #bbb;
+        text-align: left;
+        padding-left: 5px;
+    }
+
+    /* Input display styling */
+    .value-display {
+        font-size: 1em;
+        width: 60px;
+        text-align: center;
+        border: none;
+        background-color: transparent;
+        color: #DDDDDD;
+        outline: none;
+        font-weight: bold;
+        cursor: crosshair;
+    }
+
+    /* Arrow button styling */
+    .arrow-button {
+        font-size: 1.2em;
+        cursor: pointer;
+        padding: 0 8px;
+        user-select: none;
+        color: #dddddd;
+        border-radius: 50%;
+        transition: color 0.2s ease, background-color 0.2s ease;
+    }
+
+/*    .arrow-button:hover {
+        color: #fff;
+        background-color: #444;
+    }*/
+
+    /* Additional spacing for separation */
+    .extra-space {
+        margin-bottom: 16px;
+    }
+
+    /* Prevent text selection */
+    .label, .arrow-button {
+        user-select: none;
+    }
+    </style>
+</head>
+<body>
+
+<div id="main_container">
+<div class="container">
+    <div class="header">Steps and Denoise Calculator</div>
+
+    <!-- First Row: Steps Input -->
+    <div class="row">
+        <div class="arrow-button" onclick="adjustValue('stepsWanted', -1)">◀</div>
+        <div class="label">How many steps do you want?</div>
+        <input type="number" id="stepsWanted" class="value-display" value="15" readonly>
+        <div class="arrow-button" onclick="adjustValue('stepsWanted', 1)">▶</div>
+    </div>
+
+    <!-- Second Row: Denoise Input -->
+    <div class="row">
+        <div class="arrow-button" onclick="adjustValue('denoise', -0.01)">◀</div>
+        <div class="label">How much denoise? (0-1)</div>
+        <input type="number" id="denoise" class="value-display" value="0.5" readonly>
+        <div class="arrow-button" onclick="adjustValue('denoise', 0.01)">▶</div>
+    </div>
+
+    <!-- Spacer for visual separation -->
+    <div class="extra-space"></div>
+
+    <!-- Third Row: Steps Display -->
+    <div class="row">
+        <div class="arrow-button" onclick="adjustValue('steps', -1)">◀</div>
+        <div class="label">steps</div>
+        <input type="number" id="steps" class="value-display" value="2000" readonly>
+        <div class="arrow-button" onclick="adjustValue('steps', 1)">▶</div>
+    </div>
+
+    <!-- Fourth Row: Start at Step Display -->
+    <div class="row">
+        <div class="arrow-button" onclick="adjustValue('startAtStep', -1)">◀</div>
+        <div class="label">start_at_step</div>
+        <input type="number" id="startAtStep" class="value-display" value="1900" readonly>
+        <div class="arrow-button" onclick="adjustValue('startAtStep', 1)">▶</div>
+    </div>
+
+    <!-- Fifth Row: End at Step Display -->
+    <div class="row">
+        <div class="arrow-button" onclick="adjustValue('endAtStep', -1)">◀</div>
+        <div class="label">end_at_step</div>
+        <input type="number" id="endAtStep" class="value-display" value="2000" readonly>
+        <div class="arrow-button" onclick="adjustValue('endAtStep', 1)">▶</div>
+    </div>
+</div>
+</div>
+
+
+<script>
+    function computeSteps(stepsWanted, denoise) {
+        if (denoise <= 0) return;
+        let steps = Math.floor(stepsWanted / denoise);
+        let start_at_step = steps - stepsWanted;
+        let end_at_step = steps;
+        return { steps, start_at_step, end_at_step };
+    }
+
+    function computeDenoise(steps, start_at_step) {
+        let stepsWanted = steps - start_at_step;
+        let denoise = stepsWanted / steps;
+        return { stepsWanted, denoise };
+    }
+
+    function updateOutputs(fromField) {
+        let stepsWanted = parseFloat(document.getElementById('stepsWanted').value) || 0;
+        let denoise = parseFloat(document.getElementById('denoise').value) || 0;
+        let steps = parseFloat(document.getElementById('steps').value) || 0;
+        let startAtStep = parseFloat(document.getElementById('startAtStep').value) || 0;
+        let endAtStep = parseFloat(document.getElementById('endAtStep').value) || 0;
+
+        if (fromField === 'stepsWanted' || fromField === 'denoise') {
+            // Update steps, start_at_step, and end_at_step based on stepsWanted and denoise
+            if (stepsWanted > 0 && denoise > 0) {
+                let { steps, start_at_step, end_at_step } = computeSteps(stepsWanted, denoise);
+                document.getElementById('steps').value = steps;
+                document.getElementById('startAtStep').value = start_at_step;
+                document.getElementById('endAtStep').value = end_at_step;
+            }
+        } else if (fromField === 'steps' || fromField === 'startAtStep' || fromField === 'endAtStep') {
+            // Synchronize steps and endAtStep
+            if (fromField === 'steps') {
+                endAtStep = steps;
+                document.getElementById('endAtStep').value = steps;
+            } else if (fromField === 'endAtStep') {
+                steps = endAtStep;
+                document.getElementById('steps').value = endAtStep;
+            }
+            // Update stepsWanted and denoise based on steps and startAtStep
+            if (steps > 0 && steps > startAtStep) {
+                let { stepsWanted, denoise } = computeDenoise(steps, startAtStep);
+                document.getElementById('stepsWanted').value = stepsWanted;
+                document.getElementById('denoise').value = denoise.toFixed(2);
+            }
+        }
+    }
+
+    function adjustValue(id, delta) {
+        let element = document.getElementById(id);
+        let value = parseFloat(element.value) || 0;
+        value += delta;
+        if (id === 'denoise') {
+            value = Math.max(0, Math.min(1, value));
+            value = parseFloat(value.toFixed(2));
+        } else {
+            value = Math.max(parseFloat(element.min) || -Infinity, Math.min(parseFloat(element.max) || Infinity, value));
+        }
+        element.value = value;
+        updateOutputs(id);
+    }
+
+    // Event listeners for input changes
+    document.getElementById('stepsWanted').addEventListener('input', () => updateOutputs('stepsWanted'));
+    document.getElementById('denoise').addEventListener('input', () => updateOutputs('denoise'));
+    document.getElementById('steps').addEventListener('input', () => updateOutputs('steps'));
+    document.getElementById('startAtStep').addEventListener('input', () => updateOutputs('startAtStep'));
+    document.getElementById('endAtStep').addEventListener('input', () => updateOutputs('endAtStep'));
+
+    // Add scroll wheel functionality
+    ['stepsWanted', 'denoise', 'steps', 'startAtStep', 'endAtStep'].forEach(id => {
+        document.getElementById(id).addEventListener('wheel', function(event) {
+            let delta = event.deltaY < 0 ? 1 : -1;
+            if (id === 'denoise') {
+                delta = event.deltaY < 0 ? 0.01 : -0.01;
+            }
+            adjustValue(id, delta);
+            event.preventDefault();
+        });
+    });
+
+    updateOutputs('stepsWanted');
+</script>
+
+
+</body>
+</html>
